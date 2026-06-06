@@ -1,0 +1,14 @@
+keywords:
+  - Embodied AI
+  - Robotic Manipulation
+  - Visual Navigation
+  - Sim to Real
+
+# 用于每周发现基石论文，可自行补充细分方向。
+landmark_queries:
+  - embodied intelligence robotics
+  - robot learning manipulation
+  - vision language action robotics
+  - visual navigation embodied agents
+  - sim to real robotics
+

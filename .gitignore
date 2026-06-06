@@ -1,0 +1,37 @@
+# Secrets and local environments
+**/.env
+**/.env.*
+!**/.env.example
+**/.venv/
+**/venv/
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/htmlcov/
+**/.coverage
+
+# Runtime output
+embodied_ai_paper_system/logs/*.log
+embodied_ai_paper_system/data/cache/*
+!embodied_ai_paper_system/data/cache/.gitkeep
+embodied_ai_paper_system/data/candidates/*
+!embodied_ai_paper_system/data/candidates/.gitkeep
+embodied_ai_paper_system/data/history/recommendations.json
+embodied_ai_paper_system/config/landmark_papers.json
+
+# Downloaded papers and local knowledge bases
+**/*.pdf
+obsidian_vault/
+Attachments/Papers/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
