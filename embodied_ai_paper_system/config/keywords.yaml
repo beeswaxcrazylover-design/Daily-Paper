@@ -3,6 +3,11 @@ keywords:
   - Robotic Manipulation
   - Visual Navigation
   - Sim to Real
+  - Humanoid Robot          # 形态前沿：人形机器人是目前软硬件结合最热的赛道
+  - Robot Locomotion        # 核心动作：四足/双足机器人的运动控制
+  - Vision-Language-Action  # 前沿架构：VLA 模型是大模型落地机器人的核心
+  - Diffusion Policy        # 前沿算法：机械臂操作中的主流策略算法
+  - Imitation Learning      # 核心学习方法：机器人实操中的重要学习范式
 
 # 用于每周发现基石论文，可自行补充细分方向。
 landmark_queries:
@@ -11,4 +16,6 @@ landmark_queries:
   - vision language action robotics
   - visual navigation embodied agents
   - sim to real robotics
-
+  - humanoid robot locomotion control
+  - diffusion models robot learning
+  - imitation learning robotic manipulation
