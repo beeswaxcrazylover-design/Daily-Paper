@@ -59,9 +59,9 @@ Copy-Item .env.example .env
 打开 `.env` 并填写：
 
 ```dotenv
-DEEPSEEK_API_KEY=你的密钥
-SEMANTIC_SCHOLAR_API_KEY=你的可选密钥
-OBSIDIAN_VAULT_PATH=D:\你的\Obsidian库
+DEEPSEEK_API_KEY=
+SEMANTIC_SCHOLAR_API_KEY=
+OBSIDIAN_VAULT_PATH=
 ```
 
 `SEMANTIC_SCHOLAR_API_KEY` 可留空，但无 Key 时限流更严格。不要把 `.env`
