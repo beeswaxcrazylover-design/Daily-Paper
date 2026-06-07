@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date, datetime
 
 from config.settings import Settings
@@ -21,6 +22,7 @@ class LandmarkDiscovery:
         self.settings = settings
         self.scholar = scholar
         self.deepseek = deepseek
+        self.logger = logging.getLogger(__name__)
 
     def is_due(self) -> bool:
         if not self.settings.landmark_file.exists():
@@ -39,9 +41,22 @@ class LandmarkDiscovery:
         queries = self.settings.load_keywords().get("landmark_queries", [])
         candidates: dict[str, Paper] = {}
         for query in queries:
-            for paper in self.scholar.search(query, limit=80):
+            try:
+                papers = self.scholar.search(query, limit=80)
+            except Exception:
+                self.logger.exception("基石检索失败，跳过关键词：%s", query)
+                continue
+            for paper in papers:
                 if paper.year and paper.year <= date.today().year - 3:
                     candidates[paper.paper_id] = paper
+        if not candidates:
+            if self.settings.landmark_file.exists():
+                self.logger.warning("本次基石更新无结果，继续使用旧论文库")
+                return self.load()
+            raise RuntimeError(
+                "所有基石论文查询均失败。请稍后重试，或配置 "
+                "SEMANTIC_SCHOLAR_API_KEY 以获得更稳定的额度。"
+            )
         ranked = sorted(
             candidates.values(),
             key=lambda item: (

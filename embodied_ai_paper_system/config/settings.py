@@ -30,6 +30,9 @@ class Settings:
     request_timeout: int = 45
     request_interval: float = 1.2
     max_retries: int = 3
+    semantic_scholar_interval: float = 4.0
+    semantic_scholar_max_retries: int = 5
+    rate_limit_max_wait: int = 120
     candidate_limit: int = 15
     high_impact_quota: int = 6
     landmark_quota: int = 5
@@ -76,4 +79,3 @@ class Settings:
             raise ValueError(
                 "请先在 .env 中填写：" + ", ".join(missing)
             )
-

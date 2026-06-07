@@ -67,6 +67,10 @@ OBSIDIAN_VAULT_PATH=D:\你的\Obsidian库
 `SEMANTIC_SCHOLAR_API_KEY` 可留空，但无 Key 时限流更严格。不要把 `.env`
 提交到 Git 或发给他人。
 
+若日志出现 `HTTP 429`，表示 Semantic Scholar 正在限流。程序会读取服务端的
+`Retry-After` 并自动等待，单个关键词失败也不会中断整批任务。无 Key 用户仍可能
+需要隔一段时间重新运行；长期自动运行建议申请 API Key。
+
 ### 3. 调整关键词
 
 编辑 `config/keywords.yaml`。默认关键词已填好，可直接使用。

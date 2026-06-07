@@ -31,8 +31,9 @@ class SemanticScholarClient:
         self.settings = settings
         self.http = ResilientHttpClient(
             settings.request_timeout,
-            settings.request_interval,
-            settings.max_retries,
+            settings.semantic_scholar_interval,
+            settings.semantic_scholar_max_retries,
+            settings.rate_limit_max_wait,
         )
         self.headers = {}
         if settings.semantic_scholar_api_key:
@@ -87,4 +88,3 @@ class SemanticScholarClient:
             Paper.from_s2(item, "related")
             for item in response.json().get("recommendedPapers", [])
         ]
-

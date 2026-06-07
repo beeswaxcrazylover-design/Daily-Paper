@@ -44,7 +44,11 @@ class DailyPipeline:
         one_year_ago = date.today() - timedelta(days=365)
         ninety_days_ago = date.today() - timedelta(days=90)
         for keyword in keywords:
-            papers = self.scholar.search_last_year(keyword)
+            try:
+                papers = self.scholar.search_last_year(keyword)
+            except Exception:
+                self.logger.exception("每日检索失败，跳过关键词：%s", keyword)
+                continue
             for paper in papers:
                 try:
                     published = date.fromisoformat(paper.publication_date)
