@@ -1,4 +1,4 @@
-"""生成 Obsidian Daily Note，并链接 Vault 内唯一 PDF。"""
+"""生成 Obsidian Daily Note，并使用外部 PDF 链接。"""
 
 from __future__ import annotations
 
@@ -23,14 +23,14 @@ class ObsidianWriter:
 
     def write(
         self,
-        results: list[tuple[SelectedPaper, PaperAnalysis, Path | None]],
+        results: list[tuple[SelectedPaper, PaperAnalysis]],
     ) -> Path:
         today = date.today()
         note_dir = self.settings.obsidian_vault_path / "Daily Embodied AI"
         note_dir.mkdir(parents=True, exist_ok=True)
         note_path = note_dir / f"{today.isoformat()}_Daily_Embodied_AI.md"
         tags = {"论文日更", "Embodied_AI"}
-        for _, analysis, _ in results:
+        for _, analysis in results:
             tags.update(tag.lstrip("#").replace(" ", "_") for tag in analysis.tags)
         front_matter = yaml.safe_dump(
             {"date": today.isoformat(), "tags": sorted(tags)},
@@ -38,7 +38,7 @@ class ObsidianWriter:
             sort_keys=False,
         ).strip()
         blocks = [f"---\n{front_matter}\n---\n", "# 每日具身智能论文\n"]
-        for selected, analysis, pdf_path in results:
+        for selected, analysis in results:
             paper = selected.paper
             blocks.append(f"## {ROLE_TITLES[selected.role]}：{paper.title}\n")
             blocks.append(
@@ -47,11 +47,8 @@ class ObsidianWriter:
                 f"- **引用量**：{paper.citation_count}\n"
                 f"- **Semantic Scholar**：[页面]({paper.url})\n"
             )
-            if pdf_path:
-                relative = pdf_path.relative_to(
-                    self.settings.obsidian_vault_path
-                ).as_posix()
-                blocks.append(f"- **PDF**：[[{relative}|在 Obsidian 中打开]]\n")
+            if paper.open_access_pdf:
+                blocks.append(f"- **PDF**：[在浏览器中打开]({paper.open_access_pdf})\n")
             else:
                 blocks.append("- **PDF**：未能获取开放版本\n")
             blocks.append(f"\n### 中文摘要\n\n{analysis.chinese_abstract}\n")
@@ -71,4 +68,3 @@ class ObsidianWriter:
             )
         note_path.write_text("".join(blocks), encoding="utf-8")
         return note_path
-

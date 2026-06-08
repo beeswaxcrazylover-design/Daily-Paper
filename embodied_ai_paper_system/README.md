@@ -6,7 +6,7 @@
 2. 从每周更新的本地基石论文库取候选。
 3. 三个候选池独立评分，按 `6 + 5 + 4` 合并为 Top 15。
 4. DeepSeek 选择综述/脉络、深度研究、系统应用各一篇。
-5. PDF 只下载到 Obsidian Vault 的 `Attachments/Papers`。
+5. 在 Obsidian 日报中写入开放 PDF 外部链接，由默认浏览器打开。
 6. 解析并生成 `Daily Embodied AI/YYYY-MM-DD_Daily_Embodied_AI.md`。
 
 ## 项目目录
@@ -28,11 +28,7 @@ Obsidian 内会自动创建：
 
 ```text
 你的 Vault/
-├─ Daily Embodied AI/
-└─ Attachments/Papers/YYYY/MM月DD日论文/
-   ├─ review/
-   ├─ deep_dive/
-   └─ application/
+└─ Daily Embodied AI/
 ```
 
 ## 首次配置顺序
@@ -95,12 +91,12 @@ python main.py daily
 
 - `logs/当天日期.log` 没有未处理错误；
 - Obsidian 中出现当日日报；
-- 日报内 PDF 链接可以直接打开；
+- 日报内 PDF 外部链接可以在默认浏览器中打开；
 - `data/history/recommendations.json` 已记录三篇论文。
 
 `data/history/recommendations.json` 是本地运行状态，不会上传 GitHub。
 
-重复测试可使用 `python main.py daily --force`，但会覆盖同名日报和复用已下载 PDF。
+重复测试可使用 `python main.py daily --force`，但会覆盖同名日报。
 
 ## 设置 Windows 自动运行
 

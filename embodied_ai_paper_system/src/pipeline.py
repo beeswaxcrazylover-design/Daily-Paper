@@ -1,4 +1,4 @@
-"""检索、筛选、下载、解析、写入 Obsidian 的完整编排。"""
+"""检索、筛选、解析、写入 Obsidian 的完整编排。"""
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ from src.landmark_discovery import LandmarkDiscovery
 from src.obsidian_writer import ObsidianWriter
 from src.paper_analyzer import PaperAnalyzer
 from src.paper_selector import PaperSelector
-from src.pdf_manager import PdfManager
 from src.ranking import build_top_candidates
 from src.semantic_scholar import SemanticScholarClient
 
@@ -87,28 +86,25 @@ class DailyPipeline:
             self.settings.prompt_dir / "paper_selection.txt",
         )
         selected = selector.select(candidates)
-        pdf_manager = PdfManager(self.settings)
         analyzer = PaperAnalyzer(
             self.deepseek,
             self.settings.prompt_dir / "paper_analysis.txt",
         )
         results = []
         for item in selected:
-            pdf_path = pdf_manager.download(item.paper, item.role)
-            text = pdf_manager.extract_first_pages(pdf_path)
             try:
                 related = self.scholar.recommendations(item.paper.paper_id)
             except Exception:
                 self.logger.exception("相关论文获取失败：%s", item.paper.title)
                 related = []
             try:
-                analysis = analyzer.analyze(item.paper, text, related)
+                analysis = analyzer.analyze(item.paper, "", related)
             except Exception:
                 self.logger.exception(
                     "AI 深度解析失败，使用摘要降级：%s", item.paper.title
                 )
                 analysis = analyzer.fallback(item.paper, related)
-            results.append((item, analysis, pdf_path))
+            results.append((item, analysis))
         note_path = ObsidianWriter(self.settings).write(results)
         self.history.record_success(
             [
