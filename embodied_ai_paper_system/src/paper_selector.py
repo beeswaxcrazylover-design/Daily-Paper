@@ -8,6 +8,7 @@ from pathlib import Path
 from src.deepseek_client import DeepSeekClient
 from src.history_manager import HistoryManager
 from src.models import Paper, SelectedPaper
+from src.ranking import freshness_score, role_score
 
 ROLES = {"review", "deep_dive", "application"}
 
@@ -18,16 +19,25 @@ class PaperSelector:
         client: DeepSeekClient,
         history: HistoryManager,
         prompt_file: Path,
+        keywords: list[str],
+        landmark_cooldown_days: int,
     ) -> None:
         self.client = client
         self.history = history
         self.system_prompt = prompt_file.read_text(encoding="utf-8")
+        self.keywords = keywords
+        self.landmark_cooldown_days = landmark_cooldown_days
 
     def select(self, candidates: list[Paper]) -> list[SelectedPaper]:
         available = [
             paper
             for paper in candidates
-            if not self.history.is_in_cooldown(paper.paper_id)
+            if not self.history.is_in_cooldown(
+                paper.paper_id,
+                self.landmark_cooldown_days
+                if paper.source_pool == "landmark"
+                else None,
+            )
         ]
         if len(available) < 3:
             available = candidates
@@ -40,6 +50,14 @@ class PaperSelector:
                 "citations": paper.citation_count,
                 "pool": paper.source_pool,
                 "score": paper.score,
+                "freshness_score": freshness_score(paper),
+                "deep_dive_score": role_score(
+                    paper, "deep_dive", self.keywords
+                ),
+                "application_score": role_score(
+                    paper, "application", self.keywords
+                ),
+                "is_landmark": paper.source_pool == "landmark",
                 "has_pdf": bool(paper.open_access_pdf),
             }
             for paper in available
@@ -65,47 +83,83 @@ class PaperSelector:
             for item in selections
         ]
 
-    @staticmethod
-    def _valid(selections: list[dict], candidates: list[Paper]) -> bool:
+    def _valid(self, selections: list[dict], candidates: list[Paper]) -> bool:
         candidate_ids = {paper.paper_id for paper in candidates}
         ids = [item.get("paper_id") for item in selections]
-        return (
+        structurally_valid = (
             len(selections) == 3
             and {item.get("role") for item in selections} == ROLES
             and len(set(ids)) == 3
             and all(paper_id in candidate_ids for paper_id in ids)
         )
+        if not structurally_valid:
+            return False
 
-    @staticmethod
-    def _fallback(candidates: list[Paper]) -> list[SelectedPaper]:
-        remaining = sorted(candidates, key=lambda paper: paper.score, reverse=True)
+        by_id = {paper.paper_id: paper for paper in candidates}
+        role_ids = {
+            item["role"]: item["paper_id"] for item in selections
+        }
+        technical = [
+            by_id[role_ids["deep_dive"]],
+            by_id[role_ids["application"]],
+        ]
+        has_recent_candidate = any(
+            freshness_score(paper) >= 0.9 for paper in candidates
+        )
+        if has_recent_candidate and not any(
+            freshness_score(paper) >= 0.9 for paper in technical
+        ):
+            return False
+        return True
 
-        def take(predicate) -> Paper:
-            for index, paper in enumerate(remaining):
+    def _fallback(self, candidates: list[Paper]) -> list[SelectedPaper]:
+        remaining = list(candidates)
+
+        def take(predicate, role: str) -> Paper:
+            ranked = sorted(
+                enumerate(remaining),
+                key=lambda item: role_score(
+                    item[1], role, self.keywords
+                ),
+                reverse=True,
+            )
+            for index, paper in ranked:
                 if predicate(paper):
                     return remaining.pop(index)
-            return remaining.pop(0)
+            best_index = ranked[0][0]
+            return remaining.pop(best_index)
 
         review = take(
             lambda paper: paper.source_pool == "landmark"
             or any(
                 word in paper.title.lower()
                 for word in ("survey", "review", "foundation")
-            )
+            ),
+            "review",
         )
-        application = take(
-            lambda paper: any(
-                word in f"{paper.title} {paper.abstract}".lower()
-                for word in (
-                    "system",
-                    "real-world",
-                    "real robot",
-                    "deployment",
-                    "benchmark",
-                )
-            )
+        pairs = [
+            (deep, application)
+            for deep in remaining
+            for application in remaining
+            if deep.paper_id != application.paper_id
+        ]
+        if any(
+            freshness_score(paper) >= 0.9 for paper in remaining
+        ):
+            constrained = [
+                pair
+                for pair in pairs
+                if any(freshness_score(paper) >= 0.9 for paper in pair)
+            ]
+            if constrained:
+                pairs = constrained
+        deep_dive, application = max(
+            pairs,
+            key=lambda pair: (
+                role_score(pair[0], "deep_dive", self.keywords)
+                + role_score(pair[1], "application", self.keywords)
+            ),
         )
-        deep_dive = take(lambda paper: True)
         return [
             SelectedPaper("review", review),
             SelectedPaper("deep_dive", deep_dive),

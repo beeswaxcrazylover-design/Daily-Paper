@@ -38,6 +38,7 @@ class Settings:
     landmark_quota: int = 5
     frontier_quota: int = 4
     recommendation_cooldown_days: int = 60
+    landmark_cooldown_days: int = 180
     landmark_refresh_days: int = 7
 
     @property

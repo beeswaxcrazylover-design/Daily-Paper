@@ -19,13 +19,16 @@ class HistoryManager:
         with self.path.open("r", encoding="utf-8") as file:
             return json.load(file)
 
-    def is_in_cooldown(self, paper_id: str) -> bool:
+    def is_in_cooldown(
+        self, paper_id: str, cooldown_days: int | None = None
+    ) -> bool:
         today = date.today()
+        effective_cooldown = cooldown_days or self.cooldown_days
         for item in self.load().get("recommendations", []):
             if item.get("paper_id") != paper_id:
                 continue
             recommended = datetime.strptime(item["date"], "%Y-%m-%d").date()
-            if (today - recommended).days < self.cooldown_days:
+            if (today - recommended).days < effective_cooldown:
                 return True
         return False
 
@@ -50,4 +53,3 @@ class HistoryManager:
             data["successful_dates"].append(today)
         with self.path.open("w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=2)
-

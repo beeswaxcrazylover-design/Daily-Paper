@@ -84,6 +84,8 @@ class DailyPipeline:
             self.deepseek,
             self.history,
             self.settings.prompt_dir / "paper_selection.txt",
+            keywords,
+            self.settings.landmark_cooldown_days,
         )
         selected = selector.select(candidates)
         analyzer = PaperAnalyzer(

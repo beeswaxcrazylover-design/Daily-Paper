@@ -8,7 +8,11 @@
 选择要求：
 - 高度相关于具身智能、机器人学习、操作、导航或 Sim-to-Real。
 - 三篇主题尽量互补。
-- 优先选择有开放 PDF 的候选，但不能牺牲论文质量。
+- deep_dive 优先参考 deep_dive_score，application 优先参考 application_score。
+- deep_dive 与 application 至少一篇应来自近一年（freshness_score >= 0.9）。
+- 新论文优先，但不能机械排除经典论文。被标记为 is_landmark 且具有高引用、
+  高影响引用或方法范式价值的论文，仍可因其不可替代的历史作用入选。
+- 普通旧论文不能仅凭累计引用量压过高质量新论文。
 - 不得编造 paper_id，不得选择候选列表之外的论文。
 - 只输出合法 JSON，不要 Markdown 和解释。
 
@@ -18,4 +22,3 @@
   {"role":"deep_dive","paper_id":"候选ID"},
   {"role":"application","paper_id":"候选ID"}
 ]}
-
