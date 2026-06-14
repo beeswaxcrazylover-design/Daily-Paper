@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 from config.settings import Settings
@@ -25,7 +26,8 @@ class ObsidianWriterTests(unittest.TestCase):
                 tags=[],
             )
             note = ObsidianWriter(settings).write(
-                [(SelectedPaper("review", paper), analysis)]
+                [(SelectedPaper("review", paper), analysis)],
+                run_date=date(2026, 6, 13),
             )
             content = note.read_text(encoding="utf-8")
 

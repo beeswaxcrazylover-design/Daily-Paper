@@ -31,17 +31,20 @@ class DailyPipeline:
             settings, self.scholar, self.deepseek
         )
 
-    def run(self, force: bool = False) -> None:
+    def run(
+        self, force: bool = False, run_date: date | None = None
+    ) -> None:
+        target_date = run_date or date.today()
         self.settings.validate()
-        if self.history.was_successful_today() and not force:
-            self.logger.info("今天已成功生成日报，跳过重复运行")
+        if self.history.was_successful(target_date) and not force:
+            self.logger.info("%s 已成功生成日报，跳过重复运行", target_date)
             return
         config = self.settings.load_keywords()
         keywords = config.get("keywords", [])
         high_impact = []
         frontier = []
-        one_year_ago = date.today() - timedelta(days=365)
-        ninety_days_ago = date.today() - timedelta(days=90)
+        one_year_ago = target_date - timedelta(days=365)
+        ninety_days_ago = target_date - timedelta(days=90)
         for keyword in keywords:
             try:
                 papers = self.scholar.search_last_year(keyword)
@@ -60,17 +63,37 @@ class DailyPipeline:
                 if published >= ninety_days_ago:
                     frontier.append(replace(paper, source_pool="frontier"))
         landmarks = self.landmarks.update()
+        landmark_ids = {paper.paper_id for paper in landmarks}
+
+        def outside_cooldown(paper) -> bool:
+            cooldown = (
+                self.settings.landmark_cooldown_days
+                if paper.paper_id in landmark_ids
+                else self.settings.recommendation_cooldown_days
+            )
+            return not self.history.is_in_cooldown(
+                paper.paper_id,
+                cooldown_days=cooldown,
+                as_of_date=target_date,
+            )
+
         pools = {
-            "high_impact": high_impact,
-            "frontier": frontier,
-            "landmark": landmarks,
+            "high_impact": [
+                paper for paper in high_impact if outside_cooldown(paper)
+            ],
+            "frontier": [
+                paper for paper in frontier if outside_cooldown(paper)
+            ],
+            "landmark": [
+                paper for paper in landmarks if outside_cooldown(paper)
+            ],
         }
         candidates = build_top_candidates(pools, keywords, self.settings)
         if len(candidates) < 3:
             raise RuntimeError("有效候选不足 3 篇，请检查关键词或 API 响应")
         self.settings.candidate_dir.mkdir(parents=True, exist_ok=True)
         candidate_file = (
-            self.settings.candidate_dir / f"{date.today().isoformat()}.json"
+            self.settings.candidate_dir / f"{target_date.isoformat()}.json"
         )
         candidate_file.write_text(
             json.dumps(
@@ -87,7 +110,7 @@ class DailyPipeline:
             keywords,
             self.settings.landmark_cooldown_days,
         )
-        selected = selector.select(candidates)
+        selected = selector.select(candidates, target_date)
         analyzer = PaperAnalyzer(
             self.deepseek,
             self.settings.prompt_dir / "paper_analysis.txt",
@@ -107,7 +130,9 @@ class DailyPipeline:
                 )
                 analysis = analyzer.fallback(item.paper, related)
             results.append((item, analysis))
-        note_path = ObsidianWriter(self.settings).write(results)
+        note_path = ObsidianWriter(self.settings).write(
+            results, run_date=target_date
+        )
         self.history.record_success(
             [
                 {
@@ -116,6 +141,7 @@ class DailyPipeline:
                     "role": item.role,
                 }
                 for item in selected
-            ]
+            ],
+            target_date,
         )
         self.logger.info("日报已生成：%s", note_path)

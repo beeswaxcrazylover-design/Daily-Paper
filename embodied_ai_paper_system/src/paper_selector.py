@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 from src.deepseek_client import DeepSeekClient
@@ -28,7 +29,9 @@ class PaperSelector:
         self.keywords = keywords
         self.landmark_cooldown_days = landmark_cooldown_days
 
-    def select(self, candidates: list[Paper]) -> list[SelectedPaper]:
+    def select(
+        self, candidates: list[Paper], run_date: date
+    ) -> list[SelectedPaper]:
         available = [
             paper
             for paper in candidates
@@ -37,10 +40,14 @@ class PaperSelector:
                 self.landmark_cooldown_days
                 if paper.source_pool == "landmark"
                 else None,
+                as_of_date=run_date,
             )
         ]
         if len(available) < 3:
-            available = candidates
+            raise RuntimeError(
+                "冷却期外候选不足 3 篇。系统不会解除去重限制，请扩大检索池或"
+                "缩短冷却期。"
+            )
         payload = [
             {
                 "paper_id": paper.paper_id,

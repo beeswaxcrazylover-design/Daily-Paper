@@ -24,8 +24,9 @@ class ObsidianWriter:
     def write(
         self,
         results: list[tuple[SelectedPaper, PaperAnalysis]],
+        run_date: date | None = None,
     ) -> Path:
-        today = date.today()
+        today = run_date or date.today()
         note_dir = self.settings.obsidian_vault_path / "Daily Embodied AI"
         note_dir.mkdir(parents=True, exist_ok=True)
         note_path = note_dir / f"{today.isoformat()}_Daily_Embodied_AI.md"

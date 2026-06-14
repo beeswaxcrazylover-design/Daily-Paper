@@ -143,6 +143,7 @@ python main.py daily
 ```powershell
 python main.py daily
 python main.py daily --force
+python main.py daily --date 2026-06-13 --force
 python main.py landmarks
 python main.py landmarks --force
 python -m unittest discover -s tests
