@@ -10,6 +10,10 @@
 5. 在 Obsidian 日报中写入开放 PDF 外部链接，由默认浏览器打开。
 6. 解析并生成 `Daily Embodied AI/YYYY-MM-DD_Daily_Embodied_AI.md`。
 
+每篇日报包含布尔属性 `重点关注`。在 Obsidian 的 Properties 区域勾选后，
+该日期会自动出现在 `Daily Embodied AI/重点论文日索引.md` 中；重跑日报不会
+覆盖此人工标记。
+
 ## 项目目录
 
 ```text

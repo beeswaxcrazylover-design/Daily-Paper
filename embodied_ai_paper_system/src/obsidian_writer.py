@@ -30,11 +30,16 @@ class ObsidianWriter:
         note_dir = self.settings.obsidian_vault_path / "Daily Embodied AI"
         note_dir.mkdir(parents=True, exist_ok=True)
         note_path = note_dir / f"{today.isoformat()}_Daily_Embodied_AI.md"
+        highlighted = self._existing_highlight(note_path)
         tags = {"论文日更", "Embodied_AI"}
         for _, analysis in results:
             tags.update(tag.lstrip("#").replace(" ", "_") for tag in analysis.tags)
         front_matter = yaml.safe_dump(
-            {"date": today.isoformat(), "tags": sorted(tags)},
+            {
+                "date": today.isoformat(),
+                "重点关注": highlighted,
+                "tags": sorted(tags),
+            },
             allow_unicode=True,
             sort_keys=False,
         ).strip()
@@ -68,4 +73,35 @@ class ObsidianWriter:
                 "> \n\n"
             )
         note_path.write_text("".join(blocks), encoding="utf-8")
+        self._ensure_highlight_index(note_dir)
         return note_path
+
+    @staticmethod
+    def _existing_highlight(note_path: Path) -> bool:
+        """重跑日报时保留用户在 Obsidian 中设置的重点标记。"""
+        if not note_path.exists():
+            return False
+        content = note_path.read_text(encoding="utf-8")
+        if not content.startswith("---\n"):
+            return False
+        try:
+            _, front_matter, _ = content.split("---", 2)
+            properties = yaml.safe_load(front_matter) or {}
+            return properties.get("重点关注") is True
+        except (ValueError, yaml.YAMLError):
+            return False
+
+    @staticmethod
+    def _ensure_highlight_index(note_dir: Path) -> None:
+        index_path = note_dir / "重点论文日索引.md"
+        if index_path.exists():
+            return
+        index_path.write_text(
+            "# 重点论文日索引\n\n"
+            "在任意日报顶部的 Properties 中，将 `重点关注` 勾选为 `true`。"
+            "下方列表会自动显示所有重点日期。\n\n"
+            "```query\n"
+            'path:"Daily Embodied AI" [重点关注:true]\n'
+            "```\n",
+            encoding="utf-8",
+        )
